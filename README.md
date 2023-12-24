@@ -13,12 +13,11 @@ poetry install
 ## Usage
 
 1. Clone repo: `git clone https://github.com/ksusonic/tele-poke-gan`
-2. Create virtualenv: `python -m venv venv && source venv/bin/activate`
-3. Set up poetry dependencies: `poetry install`
-4. Setup project: `pre-commit install`
-5. [Optional] Check pre-commit hooks: `pre-commit run -a`
-6. Train model: `python train.py`
-7. Infer model: `python infer.py`
+2. Set up poetry dependencies: `poetry install`
+3. Setup project: `pre-commit install`
+4. [Optional] You can check pre-commit hooks: `pre-commit run -a`
+5. Train model: `python train.py`
+6. Infer model: `python infer.py`
 
 
 ## Checklist
@@ -29,7 +28,7 @@ poetry install
 
 ### Tools
 - [X] Poetry
-- [ ] Pre-commit
+- [X] Pre-commit
 - [X] DVC
 - [ ] Hydra
 - [ ] Logging (MLFlow)
