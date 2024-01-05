@@ -28,7 +28,7 @@ def train(cfg: DictConfig) -> None:
     log.info(OmegaConf.to_yaml(cfg))
 
     mlflow.set_tracking_uri(cfg["mlflow_tracking_uri"])
-    mlflow.set_experiment("Predicting News Category Using NLP")
+    mlflow.set_experiment("Anime Recommendation System")
 
     # Load the dataset
     df = pd.read_csv(cfg["user_scores_dataset_path"], usecols=["user_id", "anime_id", "rating"])
@@ -61,13 +61,15 @@ def train(cfg: DictConfig) -> None:
     y = df["scaled_score"].values
 
     test_set_size = cfg["test_set_size"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_set_size, random_state=73)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_set_size, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.25, random_state=42)
 
     log.debug("Number of samples in the training set: %d", len(y_train))
     log.debug("Number of samples in the test set: %d", len(y_test))
 
     X_train_array = [X_train[:, 0], X_train[:, 1]]
-    X_test_array = [X_test[:, 0], X_test[:, 1]]
+    X_val_array = [X_val[:, 0], X_val[:, 1]]
+    # X_test_array = [X_test[:, 0], X_test[:, 1]]
 
     # Checking if TPU is initialized
     try:
@@ -110,8 +112,9 @@ def train(cfg: DictConfig) -> None:
 
     callbacks = (
         Callbacks()
-        # .with_checkpoints()
-        .with_lr_scheduler(start_lr, min_lr, max_lr, rampup_epochs, sustain_epochs, exp_decay).with_early_stopping()
+        .with_checkpoints()
+        .with_lr_scheduler(start_lr, min_lr, max_lr, rampup_epochs, sustain_epochs, exp_decay)
+        .with_early_stopping()
     )
 
     # Define the list of callbacks
@@ -128,16 +131,16 @@ def train(cfg: DictConfig) -> None:
         batch_size=batch_size,
         epochs=epochs,
         verbose=1,
-        validation_data=(X_test_array, y_test),
+        validation_data=(X_val_array, y_val),
         callbacks=callbacks.to_list(),
     )
     end_time = time.time()
     log.info("Learn took: %d", end_time - start_time)
 
-    if callbacks.checkpoints_dir is not None:
-        model.load_weights(callbacks.checkpoints_dir)
+    if callbacks.checkpoint is not None:
+        model.load_weights(callbacks.checkpoint.name)
 
-    model_save_path = "models/resnet18.pt"
+    model_save_path = cfg["model_save_path"]
     mlflow.keras.save_model(model, model_save_path)
     log.info("Saved model at: %s", model_save_path)
 

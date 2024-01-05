@@ -1,4 +1,5 @@
-from tempfile import TemporaryDirectory
+import logging
+from tempfile import NamedTemporaryFile
 
 from tensorflow.keras.callbacks import (
     EarlyStopping,
@@ -6,11 +7,13 @@ from tensorflow.keras.callbacks import (
     ModelCheckpoint,
 )
 
+log = logging.getLogger(__name__)
+
 
 class Callbacks:
     def __init__(self):
         self._callbacks = []
-        self.checkpoints_dir = None
+        self.checkpoint = None
 
     def to_list(self) -> list:
         return self._callbacks
@@ -19,14 +22,16 @@ class Callbacks:
         """
         Model checkpoint callback to save the best weights
         """
-        self.checkpoints_dir = TemporaryDirectory()
+        self.checkpoint = NamedTemporaryFile(dir='outputs', suffix='.weights.h5')
+        log.info("Will save tmp checkpoints to: %s", self.checkpoint.name)
         self._callbacks.append(
             ModelCheckpoint(
-                filepath=self.checkpoints_dir.name,
+                filepath=self.checkpoint.name,
                 save_weights_only=True,
                 monitor='val_loss',
                 mode='min',
                 save_best_only=True,
+                verbose=1,
             )
         )
         return self
@@ -39,7 +44,8 @@ class Callbacks:
         """
         self._callbacks.append(
             LearningRateScheduler(
-                lambda epoch: self.lrfn(epoch, start_lr, min_lr, max_lr, rampup_epochs, sustain_epochs, exp_decay)
+                lambda epoch: self.lrfn(epoch, start_lr, min_lr, max_lr, rampup_epochs, sustain_epochs, exp_decay),
+                verbose=1,
             )
         )
         return self
@@ -48,12 +54,10 @@ class Callbacks:
         """
         Early stopping callback to prevent overfitting
         """
-        self._callbacks.append(EarlyStopping(patience=3, monitor='val_loss', mode='min', restore_best_weights=True))
+        self._callbacks.append(
+            EarlyStopping(patience=3, monitor='val_loss', mode='min', restore_best_weights=True, verbose=1)
+        )
         return self
-
-    def __delete__(self, instance):
-        if self.checkpoints_dir is not None:
-            self.checkpoints_dir.cleanup()
 
     @staticmethod
     def lrfn(epoch, start_lr, min_lr, max_lr, rampup_epochs, sustain_epochs, exp_decay):

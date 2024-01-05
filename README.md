@@ -1,4 +1,4 @@
-# [Anime Recommendations Database](https://www.kaggle.com/datasets/CooperUnion/anime-recommendations-database)
+# [Anime Recommendation System](https://www.kaggle.com/datasets/CooperUnion/anime-recommendations-database)
 
 ## Installation
 
