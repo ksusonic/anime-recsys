@@ -1,0 +1,15 @@
+anime_dataset_path: "data/anime-dataset-2023.csv"
+user_scores_dataset_path: "data/users-score-2023.csv"
+mlflow_tracking_uri: "http://127.0.0.1:8080"
+test_set_size: 0.9999 # FOR FAST LEARN !!! - decrease down to 0.3 for nice results
+
+start_lr: 0.00001
+min_lr: 0.00001
+max_lr: 0.00005
+batch_size: 256
+rampup_epochs: 5
+sustain_epochs: 0
+exp_decay: 0.8
+epochs: 5
+num_workers: 4
+learning_rate: 0.001
