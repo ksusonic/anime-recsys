@@ -1,9 +1,8 @@
 import logging
 
 import hydra
-import mlflow
-import mlflow.keras
 import pandas as pd
+from dataloader import load_model, load_user_scores
 from omegaconf import DictConfig
 from preprocess import preprocess
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -16,7 +15,7 @@ log = logging.getLogger(__name__)
 def infer(cfg: DictConfig):
     random_state = cfg["random_state"]
 
-    df = pd.read_csv(cfg["user_scores_dataset_path"], usecols=["user_id", "anime_id", "rating"])
+    df = load_user_scores(cfg["user_scores_dataset_path"])
     df, _, _ = preprocess(df, random_state)
 
     X = df[["user_encoded", "anime_encoded"]].values
@@ -25,7 +24,7 @@ def infer(cfg: DictConfig):
     log.info("Splitting dataset by %f of df", cfg["inference_data_size"])
     _, X_test, _, y_test = train_test_split(X, y, test_size=cfg["inference_data_size"], random_state=random_state)
 
-    model = mlflow.keras.load_model(cfg["model_save_path"])
+    model = load_model(cfg["model_save_path"])
     log.info("Loaded model: %s", model.summary())
 
     y_pred = model.predict([X_test[:, 0], X_test[:, 1]])

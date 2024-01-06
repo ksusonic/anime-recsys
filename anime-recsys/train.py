@@ -7,11 +7,11 @@ import hydra
 import mlflow
 import mlflow.keras
 import numpy as np
-import pandas as pd
 
 # Model Training
 import tensorflow as tf
 from callbacks import Callbacks
+from dataloader import load_user_scores
 from model import recommender_net
 from omegaconf import DictConfig, OmegaConf
 from preprocess import preprocess
@@ -30,7 +30,7 @@ def train(cfg: DictConfig) -> None:
     mlflow.log_params(dict(cfg))
 
     # Load the dataset
-    df = pd.read_csv(cfg["user_scores_dataset_path"], usecols=["user_id", "anime_id", "rating"])
+    df = load_user_scores(cfg["user_scores_dataset_path"])
     log.info("Shape of the Dataset: %s", df.shape)
     log.debug("Average Score: %f", np.mean(df["rating"]))
 
