@@ -3,6 +3,8 @@ user_scores_dataset_path: "data/users-score-2023.csv"
 model_save_path: "models/recommender_net.pt"
 mlflow_tracking_uri: "http://127.0.0.1:8080"
 test_set_size: 0.9999 # FOR FAST LEARN !!! - decrease down to 0.3 for nice results
+inference_data_size: 0.2
+random_state: 42
 
 start_lr: 0.00001
 min_lr: 0.00001

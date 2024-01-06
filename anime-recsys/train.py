@@ -14,11 +14,8 @@ import tensorflow as tf
 from callbacks import Callbacks
 from model import recommender_net
 from omegaconf import DictConfig, OmegaConf
+from preprocess import preprocess
 from sklearn.model_selection import train_test_split
-
-# Data Preprocessing
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-from sklearn.utils import shuffle
 
 log = logging.getLogger(__name__)
 
@@ -26,43 +23,29 @@ log = logging.getLogger(__name__)
 @hydra.main(version_base=None, config_path="../configs", config_name="config")
 def train(cfg: DictConfig) -> None:
     log.info(OmegaConf.to_yaml(cfg))
+    random_state = cfg["random_state"]
 
     mlflow.set_tracking_uri(cfg["mlflow_tracking_uri"])
     mlflow.set_experiment("Anime Recommendation System")
+    mlflow.log_params(dict(cfg))
 
     # Load the dataset
     df = pd.read_csv(cfg["user_scores_dataset_path"], usecols=["user_id", "anime_id", "rating"])
     log.info("Shape of the Dataset: %s", df.shape)
     log.debug("Average Score: %f", np.mean(df["rating"]))
 
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    log.info("Using %s scaler", scaler.__class__.__name__)
-    df["scaled_score"] = scaler.fit_transform(df[["rating"]])
-
-    # Encoding user IDs
-    user_encoder = LabelEncoder()
-    df["user_encoded"] = user_encoder.fit_transform(df["user_id"])
-    num_users = len(user_encoder.classes_)
-
-    # Encoding anime IDs
-    anime_encoder = LabelEncoder()
-    df["anime_encoded"] = anime_encoder.fit_transform(df["anime_id"])
-    num_animes = len(anime_encoder.classes_)
-
+    df, num_users, num_animes = preprocess(df, random_state)
     # Printing dataset information
     log.debug("Number of unique users: %d, Number of unique anime: %d", num_users, num_animes)
     log.debug("Minimum rating: %d, Maximum rating: %d", min(df["rating"]), max(df["rating"]))
-
-    # Shuffle the dataset
-    df = shuffle(df, random_state=100)
 
     # Create feature matrix X and target variable y
     X = df[["user_encoded", "anime_encoded"]].values
     y = df["scaled_score"].values
 
     test_set_size = cfg["test_set_size"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_set_size, random_state=42)
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.25, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_set_size, random_state=random_state)
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.25, random_state=random_state)
 
     log.debug("Number of samples in the training set: %d", len(y_train))
     log.debug("Number of samples in the test set: %d", len(y_test))
